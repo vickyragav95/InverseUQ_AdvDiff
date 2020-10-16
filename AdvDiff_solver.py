@@ -2,18 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math as mt
 
-def AdvDiff_solve(beta, kappa, source, bc_left, bc_right, nel):
-    # input parameters
-    # beta     = 1.0
-    # kappa    = 0.05
-    # source   = 1.0
-    # bc_left  = 0.0
-    # bc_right = 0.0
+def AdvDiff_solve(beta, kappa, source, bc_left, bc_right):
 
     # domain parameters
     x_A = 0.0
     L   = 1.0
     x_B = x_A + L
+
+    nel = 100
 
     # mesh parameters
     nnp = nel+1
@@ -120,6 +116,8 @@ def AdvDiff_solve(beta, kappa, source, bc_left, bc_right, nel):
     A[nnp-1][nnp-1] = 1.0
 
     u = np.linalg.solve(A,b)
-    fig = plt.figure()
-    plt.plot(xmesh,u,'r--')
-    plt.show()
+    # fig = plt.figure()
+    # plt.plot(xmesh,u,'r--')
+    # plt.show()
+    slope = (u[-2]-u[-1])/(xmesh[-2]-xmesh[-1])
+    return -kappa*slope
