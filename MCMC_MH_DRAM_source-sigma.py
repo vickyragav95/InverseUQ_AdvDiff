@@ -65,14 +65,58 @@ def ln_likelihood(data_expmt, params):
 
     return -0.5*n*np.log(2*np.pi*param_sig_Sq) - 0.5*np.sum(diff**2/param_sig_Sq)
 
-def ln_posterior(data_expmt, params):
+def ln_likelihood_simple(data_expmt, params):
+    nrv = len(params0)
+    params = np.reshape(params,[1,nrv])
+
+    diff = data_expmt-computational_model(beta_deterministic, kappa_deterministic, bc_left_deterministic, bc_right_deterministic, params)
+
+    return -0.5*np.sum(diff**2)
+
+def ln_likelihood_construct_surrogate(data_experiment):
+    Nsamples = 5
+    samples = np.random.uniform(0.0, 20.0, Nsamples)
+    y = np.zeros((Nsamples,1), dtype=float)
+    A = np.zeros((Nsamples,3), dtype=float)
+    for i in range(Nsamples):
+        if (len(params0)==2):
+            new_params = [samples[i], sig_true]
+        else:
+            new_params = [samples[i]]
+        y[i,0] = ln_likelihood_simple(data_experiment, new_params)
+        A[i,:] = [1, samples[i], samples[i]**2]
+
+    y = np.matmul(np.transpose(A), y)
+    A = np.matmul(np.transpose(A), A)
+    a = np.linalg.solve(A,y)
+
+    return -a[1]/(2.0*a[2]), 2.0*np.abs(a[2]), a[0]-a[1]*a[1]/(4.0*a[2])
+
+def surrogate_ln_likelihood(mu_like, tau_like, off_like, params):
+    nrv = len(params0)
+    params = np.reshape(params,[1,nrv])
+
+    source = params[0,0]
+    param_sig_Sq = sig_true**2
+    if (nrv==2):
+        param_sig_Sq = params[0,1]**2
+
+    f_model = -0.5*tau_like*(source-mu_like)**2 + off_like
+    return f_model/param_sig_Sq
+
+def ln_posterior(data_expmt, params, surr_model):
     ln_prior_val = ln_prior(params)
     if (np.isinf(ln_prior_val)): # skip likelihood computation
         return ln_prior_val
 
-    return ln_likelihood(data_expmt, params)+ln_prior_val
+    if (surr_model):
+        Llk = surrogate_ln_likelihood(mu_like, tau_like, off_like, params)
+    else:
+        Llk = ln_likelihood(data_expmt, params)
 
-def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
+    return Llk+ln_prior_val
+
+def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model):
 
     if (init_cov.shape[0] != init_cov.shape[1] or init_cov.shape[0] != len(params0)):
         raise ValueError("Proposal covariance should have same shape as parameter vector.")
@@ -89,7 +133,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
     n_accept = 0
 
     chain[0] = params0
-    ln_posts[0] = ln_posterior(data_experiment, chain[0])
+    ln_posts[0] = ln_posterior(data_experiment, chain[0], surr_model)
 
     # loop through the number of steps requested and run MCMC
     for i in range(1,n_steps):
@@ -99,7 +143,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
         z = np.random.normal(0,np.ones(len(params0)))
         new_params = chain[i-1]+L@z
 
-        new_ln_post = ln_posterior(data_experiment, new_params)
+        new_ln_post = ln_posterior(data_experiment, new_params, surr_model)
 
         ln_p_accept = new_ln_post - ln_posts[i-1]
 
@@ -114,7 +158,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
             z = np.random.normal(0,np.ones(len(params0)))
             new_params2 = chain[i-1]+gamma_DR*L@z
 
-            new_ln_post2 = ln_posterior(data_experiment, new_params2)
+            new_ln_post2 = ln_posterior(data_experiment, new_params2, surr_model)
 
             ln_p_accept2 = new_ln_post - ln_posts[i-1]
 
@@ -137,14 +181,8 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
 
 
 # case 1: sig_true is known
-run_case1 = False
+run_case1 = True
 if (run_case1):
-
-    # params0 = [15.0]
-    # proposal_sigmas = [0.25]
-    # n_steps = 4096
-    #
-    # chain,_,acc_frac = run_metropolis_hastings(params0, n_steps, proposal_sigmas)
 
     params0 = [15.0]
     init_cov = np.diag([(0.25)**2])
@@ -153,7 +191,15 @@ if (run_case1):
     n_up = 256
     gamma_DR = 1./5.
 
-    chain,_,acc_frac = run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR)
+    mu_like = 0.0
+    tau_like = 0.0
+    off_like = 0.0
+    surr_model = True
+
+    if (surr_model):
+        mu_like, tau_like, off_like = ln_likelihood_construct_surrogate(data_experiment)
+
+    chain,_,acc_frac = run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model)
 
     print('case 1 stats:')
     print('  acceptance fraction: {:.2%}'.format(acc_frac))
@@ -171,8 +217,10 @@ if (run_case1):
         plt.plot(chain[:,0], color='k', drawstyle='steps')
         plt.axhline(source_true, color='r', label='true')
         plt.ylabel('$f$/source')
-
-        plt.savefig('MCMC_DRAM_f_chains.png')
+        if (surr_model):
+            plt.savefig('MCMC_MH_f_chains_SM.png')
+        else:
+            plt.savefig('MCMC_DRAM_f_chains.png')
         plt.show()
 
     plot_margPDFs_using_corner = True
@@ -180,23 +228,35 @@ if (run_case1):
         # fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection'], truths=[beta_true])
         plt.hist(chain[1024:], bins=32, range=(9.3,10.7))
         plt.axvline(source_true, color='r', label='true')
-        plt.savefig('MCMC_DRAM_f_margPDFs.png')
+        if (surr_model):
+            plt.savefig('MCMC_MH_f_margPDFs_SM.png')
+        else:
+            plt.savefig('MCMC_DRAM_f_margPDFs.png')
         plt.show()
 
 # case 2: sig_true is unknown
 run_case2 = True
 if (run_case2):
 
-    params0 = [6.0, 3.0]
-    init_cov = np.diag([0.05**2,0.05**2])
+    params0 = [15.0, 3.0]
+    init_cov = np.diag([0.25**2,0.05**2])
     n_steps = 2048
     n_AM = 512
     n_up = 256
     gamma_DR = 1./5.
 
-    chain,_,acc_frac = run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR)
+    mu_like = 0.0
+    tau_like = 0.0
+    off_like = 0.0
+    surr_model = True
 
-    print('case 1 stats:')
+    if (surr_model):
+        mu_like, tau_like, off_like = ln_likelihood_construct_surrogate(data_experiment)
+        # print(mu_like, tau_like, off_like)
+
+    chain,_,acc_frac = run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model)
+
+    print('case 2 stats:')
     print('  acceptance fraction: {:.2%}'.format(acc_frac))
 
     good_samples = chain[1024::4] # discard first 1024 samples and take every 4th
@@ -213,8 +273,10 @@ if (run_case2):
         plt.plot(chain[:,0], chain[:,1], marker='', color='k', linewidth=1.)
         plt.xlabel('source')
         plt.ylabel('$\sigma$')
-
-        plt.savefig('MCMC_MH_f-sig_paramspace.png')
+        if (surr_model):
+            plt.savefig('MCMC_MH_f-sig_paramspace_SM.png')
+        else:
+            plt.savefig('MCMC_MH_f-sig_paramspace.png')
         plt.show()
 
     plot_each_chain = True
@@ -231,14 +293,18 @@ if (run_case2):
         axes[1].axhline(sig_true, color='r', label='sigma_true')
         axes[0].legend(loc='best')
         axes[1].set_ylabel('$\sigma_{\epsilon}$/noise')
-
-        plt.savefig('MCMC_MH_f-sig_chains.png')
+        if (surr_model):
+            plt.savefig('MCMC_MH_f-sig_chains_SM.png')
+        else:
+            plt.savefig('MCMC_MH_f-sig_chains.png')
         plt.show()
 
 
     plot_margPDFs_using_corner = True
     if (plot_margPDFs_using_corner):
         fig = corner.corner(chain[1024:], bins=32, labels=['$f$/source', '$\sigma_{\epsilon}$/noise'], truths=[source_true, sig_true])
-
-        plt.savefig('MCMC_MH_f-sig_margPDFs.png')
+        if (surr_model):
+            plt.savefig('MCMC_MH_f-sig_margPDFs_SM.png')
+        else:
+            plt.savefig('MCMC_MH_f-sig_margPDFs.png')
         plt.show()
