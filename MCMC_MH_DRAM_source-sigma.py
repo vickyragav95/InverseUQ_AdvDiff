@@ -29,7 +29,10 @@ data_experiment = data_true + noise_true
 def ln_prior(params):
     # source : [-10, 10]
     # sigma : [0, 10]
-    source  = params[0]
+    nrv = len(params0)
+    params = np.reshape(params,[1,nrv])
+    # print(params)
+    source  = params[0,0]
     ln_prior_val = 0
 
     if source < 5 or source > 20:
@@ -38,23 +41,25 @@ def ln_prior(params):
         ln_prior_val += np.log(1.0/15.0)
 
     if (len(params)==2):
-        sig = params[1]
-        if sig < 0 or sig > 2.:
+        sig = params[0,1]
+        if sig < 0 or sig > 10:
             return -np.inf
         else:
-            ln_prior_val += np.log(1.0/2.0)
+            ln_prior_val += np.log(1.0/10.0)
 
     return ln_prior_val
 
 def computational_model(beta, kappa, bc_left, bc_right, params):
-    return (AdvDiff_solve(beta, kappa, params[0], bc_left, bc_right))
+    return (AdvDiff_solve(beta, kappa, params[0,0], bc_left, bc_right))
 
 def ln_likelihood(data_expmt, params):
+    nrv = len(params0)
+    params = np.reshape(params,[1,nrv])
     n = len(data_expmt)
 
     param_sig_Sq = sig_true**2
-    if (len(params)==3):
-        param_sig_Sq = params[2]**2
+    if (nrv==2):
+        param_sig_Sq = params[0,1]**2
 
     diff = data_expmt-computational_model(beta_deterministic, kappa_deterministic, bc_left_deterministic, bc_right_deterministic, params)
 
@@ -110,7 +115,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
         raise ValueError("Proposal covariance should have same shape as parameter vector.")
 
     s_AM = 2.38**2/len(params0)
-    n_burn = 1024
+    n_burn = 800
 
     cov = copy.deepcopy(init_cov)
     L = np.linalg.cholesky(cov)
@@ -126,6 +131,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
     # loop through the number of steps requested and run MCMC
     for i in range(1,n_steps):
         print("\nIteration--",i)
+        # print(chain[i-1])
         # proposed new parameters
         z = np.random.normal(0,np.ones(len(params0)))
         new_params = chain[i-1]+L@z
@@ -168,7 +174,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
 
 
 # case 1: sig_true is known
-run_case1 = True
+run_case1 = False
 if (run_case1):
 
     # params0 = [15.0]
@@ -179,7 +185,7 @@ if (run_case1):
 
     params0 = [15.0]
     init_cov = np.diag([(0.25)**2])
-    n_steps = 4096
+    n_steps = 2048
     n_AM = 512
     n_up = 256
     gamma_DR = 1./5.
@@ -203,7 +209,7 @@ if (run_case1):
         plt.axhline(source_true, color='r', label='true')
         plt.ylabel('$f$/source')
 
-        plt.savefig('MCMC_DRAM_case0_chains_1rv.png')
+        plt.savefig('MCMC_DRAM_f_chains.png')
         plt.show()
 
     plot_margPDFs_using_corner = True
@@ -211,20 +217,23 @@ if (run_case1):
         # fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection'], truths=[beta_true])
         plt.hist(chain[1024:], bins=32, range=(9.3,10.7))
         plt.axvline(source_true, color='r', label='true')
-        plt.savefig('MCMC_DRAM_case0_margPDFs_1rv.png')
+        plt.savefig('MCMC_DRAM_f_margPDFs.png')
         plt.show()
 
 # case 2: sig_true is unknown
-run_case2 = False
+run_case2 = True
 if (run_case2):
 
-    params0 = [3.1,5.5,0.5]
-    proposal_sigmas = [0.25,0.25,0.25]
-    n_steps = 4096
+    params0 = [6.0, 3.0]
+    init_cov = np.diag([0.05**2,0.05**2])
+    n_steps = 2048
+    n_AM = 512
+    n_up = 256
+    gamma_DR = 1./5.
 
-    chain,_,acc_frac = run_metropolis_hastings(params0, n_steps, proposal_sigmas)
+    chain,_,acc_frac = run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR)
 
-    print('case 2 stats:')
+    print('case 1 stats:')
     print('  acceptance fraction: {:.2%}'.format(acc_frac))
 
     good_samples = chain[1024::4] # discard first 1024 samples and take every 4th
@@ -232,18 +241,17 @@ if (run_case2):
     low,med,hi = np.percentile(good_samples, [16, 50, 84], axis=0)
     upper, lower = hi-med, med-low
 
-    for i,name in enumerate(['beta:', 'source:', 'sigma:']):
+    for i,name in enumerate(['source:','sigma']):
         print(' ',name,' %.4f'%med[i],'+/- %.4f'%upper[i],'/%.4f'%lower[i])
 
     plot_chain_in_paramSpace_case1 = True
     if (plot_chain_in_paramSpace_case1):
-        plt.plot(beta_true, source_true, marker='o', color='r', zorder=10)
+        plt.plot(source_true, sig_true, marker='o', color='r', zorder=10)
         plt.plot(chain[:,0], chain[:,1], marker='', color='k', linewidth=1.)
+        plt.xlabel('source')
+        plt.ylabel('$\sigma$')
 
-        plt.xlabel('$beta$/advection')
-        plt.ylabel('$f$/source')
-
-        plt.savefig('MCMC_MH_case2_paramspace.pdf')
+        plt.savefig('MCMC_MH_f-sig_paramspace.png')
         plt.show()
 
     plot_each_chain = True
@@ -253,22 +261,29 @@ if (run_case2):
         for i in range(len(params0)):
             axes[i].plot(chain[:,i], color='k', drawstyle='steps')
 
-        axes[0].axhline(beta_true, color='r', label='true')
+        axes[0].axhline(source_true, color='r', label='source_true')
         axes[0].legend(loc='best')
-        axes[0].set_ylabel('$beta$/advection')
+        axes[0].set_ylabel('$f$/source')
 
-        axes[1].axhline(source_true, color='r', label='true')
-        axes[1].set_ylabel('$f$/source')
+        axes[1].axhline(sig_true, color='r', label='sigma_true')
+        axes[0].legend(loc='best')
+        axes[1].set_ylabel('$\sigma_{\epsilon}$/noise')
 
-        axes[2].axhline(sig_true, color='r', label='true')
-        axes[2].set_ylabel('$\sigma_{\epsilon}$/noise')
-
-        plt.savefig('MCMC_MH_case2_chains.pdf')
+        plt.savefig('MCMC_MH_f-sig_chains.png')
         plt.show()
+
+
+    # plot_margPDFs_using_corner = True
+    # if (plot_margPDFs_using_corner):
+    #     # fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection'], truths=[beta_true])
+    #     plt.hist(chain[1024:], bins=32, range=(9.3,10.7))
+    #     plt.axvline(source_true, color='r', label='true')
+    #     plt.savefig('MCMC_DRAM_case0_margPDFs_1rv.png')
+    #     plt.show()
 
     plot_margPDFs_using_corner = True
     if (plot_margPDFs_using_corner):
-        fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection', '$f$/source', '$\sigma_{\epsilon}$/noise'], truths=[beta_true, source_true, sig_true])
+        fig = corner.corner(chain[1024:], bins=32, labels=['$f$/source', '$\sigma_{\epsilon}$/noise'], truths=[source_true, sig_true])
 
-        plt.savefig('MCMC_MH_case2_margPDFs.pdf')
+        plt.savefig('MCMC_MH_f-sig_margPDFs.png')
         plt.show()
