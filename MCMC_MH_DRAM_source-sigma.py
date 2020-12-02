@@ -72,43 +72,6 @@ def ln_posterior(data_expmt, params):
 
     return ln_likelihood(data_expmt, params)+ln_prior_val
 
-def run_metropolis_hastings(params0, n_steps, proposal_sigmas):
-    print("Running MCMC-MH...\n")
-    if (len(proposal_sigmas) != len(params0)):
-        raise ValueError("Proposal distribution should have same shape as parameter vector.")
-
-    chain = np.zeros((n_steps, len(params0)))
-    ln_posts = np.zeros(n_steps)
-
-    n_accept = 0
-
-    chain[0] = params0
-    ln_posts[0] = ln_posterior(data_experiment, chain[0])
-
-    # loop through the number of steps requested and run MCMC
-    for i in range(1,n_steps):
-        print("\nIteration--",i)
-        # proposed new parameters
-        new_params = np.random.normal(chain[i-1],proposal_sigmas)
-
-        new_ln_post = ln_posterior(data_experiment, new_params)
-
-        ln_p_accept = new_ln_post - ln_posts[i-1]
-
-        ln_r = np.log(np.random.rand())
-
-        if (ln_p_accept > ln_r):
-            chain[i] = new_params
-            ln_posts[i] = new_ln_post
-            n_accept += 1
-        else:
-            chain[i] = chain[i-1]
-            ln_posts[i] = ln_posts[i-1]
-
-    acc_frac = n_accept / n_steps
-    return chain, ln_posts, acc_frac
-
-
 def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
 
     if (init_cov.shape[0] != init_cov.shape[1] or init_cov.shape[0] != len(params0)):
@@ -272,14 +235,6 @@ if (run_case2):
         plt.savefig('MCMC_MH_f-sig_chains.png')
         plt.show()
 
-
-    # plot_margPDFs_using_corner = True
-    # if (plot_margPDFs_using_corner):
-    #     # fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection'], truths=[beta_true])
-    #     plt.hist(chain[1024:], bins=32, range=(9.3,10.7))
-    #     plt.axvline(source_true, color='r', label='true')
-    #     plt.savefig('MCMC_DRAM_case0_margPDFs_1rv.png')
-    #     plt.show()
 
     plot_margPDFs_using_corner = True
     if (plot_margPDFs_using_corner):
