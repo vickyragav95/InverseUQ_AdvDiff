@@ -13,7 +13,7 @@ kappa_true = 0.1
 # true source
 source_true = 10.0
 # true noise added to data
-sig_true = 1.0
+sig_true = 3.0
 
 # deterministic parameters
 beta_deterministic     = 2.0
@@ -35,22 +35,15 @@ def ln_prior(params):
     source = params[1]
     ln_prior_val = 0
 
-    if kappa < 0.0 or kappa > 0.5:
+    if kappa < 0.0 or kappa > 2.0:
         return -np.inf
     else:
-        ln_prior_val += np.log(1.0/0.5)
+        ln_prior_val += np.log(1.0/2.0)
 
     if source < 5 or source > 20:
         return -np.inf
     else:
         ln_prior_val += np.log(1.0/15.0)
-
-    if (len(params)==3):
-        sig = params[1]
-        if sig < 0 or sig > 2.:
-            return -np.inf
-        else:
-            ln_prior_val += np.log(1.0/2.0)
 
     return ln_prior_val
 
@@ -61,8 +54,6 @@ def ln_likelihood(data_expmt, params):
     n = len(data_expmt)
 
     param_sig_Sq = sig_true**2
-    if (len(params)==3):
-        param_sig_Sq = params[2]**2
 
     diff = data_expmt-computational_model(beta_deterministic, bc_left_deterministic, bc_right_deterministic, params)
 
@@ -74,42 +65,6 @@ def ln_posterior(data_expmt, params):
         return ln_prior_val
 
     return ln_likelihood(data_expmt, params)+ln_prior_val
-
-def run_metropolis_hastings(params0, n_steps, proposal_sigmas):
-    print("Running MCMC-MH...\n")
-    if (len(proposal_sigmas) != len(params0)):
-        raise ValueError("Proposal distribution should have same shape as parameter vector.")
-
-    chain = np.zeros((n_steps, len(params0)))
-    ln_posts = np.zeros(n_steps)
-
-    n_accept = 0
-
-    chain[0] = params0
-    ln_posts[0] = ln_posterior(data_experiment, chain[0])
-
-    # loop through the number of steps requested and run MCMC
-    for i in range(1,n_steps):
-        print("\nIteration--",i)
-        # proposed new parameters
-        new_params = np.random.normal(chain[i-1],proposal_sigmas)
-
-        new_ln_post = ln_posterior(data_experiment, new_params)
-        ln_p_accept = new_ln_post - ln_posts[i-1]
-
-        ln_r = np.log(np.random.rand())
-
-        if (ln_p_accept > ln_r):
-            chain[i] = new_params
-            ln_posts[i] = new_ln_post
-            n_accept += 1
-        else:
-            chain[i] = chain[i-1]
-            ln_posts[i] = ln_posts[i-1]
-
-    acc_frac = n_accept / n_steps
-    return chain, ln_posts, acc_frac
-
 
 def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR):
 
@@ -184,9 +139,9 @@ if (run_case1):
     #
     # chain,_,acc_frac = run_metropolis_hastings(params0, n_steps, proposal_sigmas)
 
-    params0 = [0.3, 15.0]
-    init_cov = np.diag([(0.05)**2, (0.25)**2])
-    n_steps = 8192
+    params0 = [1.0, 15.0]
+    init_cov = np.diag([(0.02)**2, (0.25)**2])
+    n_steps = 2048
     n_AM = 512
     n_up = 256
     gamma_DR = 1./5.
@@ -212,7 +167,7 @@ if (run_case1):
         plt.xlabel('$kappa$/diffusivity')
         plt.ylabel('$f$/source')
 
-        plt.savefig('MCMC_DRAM_case1_paramspace.png')
+        plt.savefig('MCMC_DRAM_k-f_paramspace.png')
         plt.show()
 
     plot_each_chain = True
@@ -224,76 +179,17 @@ if (run_case1):
 
         axes[0].axhline(kappa_true, color='r', label='true')
         axes[0].legend(loc='best')
-        axes[0].set_ylabel('$kappa$/diffusivity')
+        axes[0].set_ylabel('$\kappa$/diffusivity')
 
         axes[1].axhline(source_true, color='r', label='true')
         axes[1].set_ylabel('$f$/source')
 
-        plt.savefig('MCMC_DRAM_case1_chains.png')
+        plt.savefig('MCMC_DRAM_k-f_chains.png')
         plt.show()
 
     plot_margPDFs_using_corner = True
     if (plot_margPDFs_using_corner):
-        fig = corner.corner(chain[1024:], bins=32, labels=['$kappa$/diffusivity', '$f$/source'], truths=[kappa_true, source_true])
+        fig = corner.corner(chain[1024:], bins=32, labels=['$\kappa$/diffusivity', '$f$/source'], truths=[kappa_true, source_true])
 
-        plt.savefig('MCMC_DRAM_case1_margPDFs.png')
-        plt.show()
-
-# case 2: sig_true is unknown
-run_case2 = False
-if (run_case2):
-
-    params0 = [3.1,5.5,0.5]
-    proposal_sigmas = [0.25,0.25,0.25]
-    n_steps = 4096
-
-    chain,_,acc_frac = run_metropolis_hastings(params0, n_steps, proposal_sigmas)
-
-    print('case 2 stats:')
-    print('  acceptance fraction: {:.2%}'.format(acc_frac))
-
-    good_samples = chain[1024::4] # discard first 1024 samples and take every 4th
-
-    low,med,hi = np.percentile(good_samples, [16, 50, 84], axis=0)
-    upper, lower = hi-med, med-low
-
-    for i,name in enumerate(['beta:', 'source:', 'sigma:']):
-        print(' ',name,' %.4f'%med[i],'+/- %.4f'%upper[i],'/%.4f'%lower[i])
-
-    plot_chain_in_paramSpace_case1 = True
-    if (plot_chain_in_paramSpace_case1):
-        plt.plot(beta_true, source_true, marker='o', color='r', zorder=10)
-        plt.plot(chain[:,0], chain[:,1], marker='', color='k', linewidth=1.)
-
-        plt.xlabel('$beta$/advection')
-        plt.ylabel('$f$/source')
-
-        plt.savefig('MCMC_MH_case2_paramspace.pdf')
-        plt.show()
-
-    plot_each_chain = True
-    if(plot_each_chain):
-        fig,axes = plt.subplots(len(params0), 1, sharex=True)
-
-        for i in range(len(params0)):
-            axes[i].plot(chain[:,i], color='k', drawstyle='steps')
-
-        axes[0].axhline(beta_true, color='r', label='true')
-        axes[0].legend(loc='best')
-        axes[0].set_ylabel('$beta$/advection')
-
-        axes[1].axhline(source_true, color='r', label='true')
-        axes[1].set_ylabel('$f$/source')
-
-        axes[2].axhline(sig_true, color='r', label='true')
-        axes[2].set_ylabel('$\sigma_{\epsilon}$/noise')
-
-        plt.savefig('MCMC_MH_case2_chains.pdf')
-        plt.show()
-
-    plot_margPDFs_using_corner = True
-    if (plot_margPDFs_using_corner):
-        fig = corner.corner(chain[1024:], bins=32, labels=['$beta$/advection', '$f$/source', '$\sigma_{\epsilon}$/noise'], truths=[beta_true, source_true, sig_true])
-
-        plt.savefig('MCMC_MH_case2_margPDFs.pdf')
+        plt.savefig('MCMC_DRAM_k-f_margPDFs.png')
         plt.show()
