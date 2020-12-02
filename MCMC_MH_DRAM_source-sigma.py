@@ -218,7 +218,7 @@ if (run_case1):
         plt.axhline(source_true, color='r', label='true')
         plt.ylabel('$f$/source')
         if (surr_model):
-            plt.savefig('MCMC_MH_f_chains_SM.png')
+            plt.savefig('MCMC_DRAM_f_chains_SM.png')
         else:
             plt.savefig('MCMC_DRAM_f_chains.png')
         plt.show()
@@ -229,7 +229,7 @@ if (run_case1):
         plt.hist(chain[1024:], bins=32, range=(9.3,10.7))
         plt.axvline(source_true, color='r', label='true')
         if (surr_model):
-            plt.savefig('MCMC_MH_f_margPDFs_SM.png')
+            plt.savefig('MCMC_DRAM_f_margPDFs_SM.png')
         else:
             plt.savefig('MCMC_DRAM_f_margPDFs.png')
         plt.show()
@@ -274,9 +274,9 @@ if (run_case2):
         plt.xlabel('source')
         plt.ylabel('$\sigma$')
         if (surr_model):
-            plt.savefig('MCMC_MH_f-sig_paramspace_SM.png')
+            plt.savefig('MCMC_DRAM_f-sig_paramspace_SM.png')
         else:
-            plt.savefig('MCMC_MH_f-sig_paramspace.png')
+            plt.savefig('MCMC_DRAM_f-sig_paramspace.png')
         plt.show()
 
     plot_each_chain = True
@@ -294,9 +294,9 @@ if (run_case2):
         axes[0].legend(loc='best')
         axes[1].set_ylabel('$\sigma_{\epsilon}$/noise')
         if (surr_model):
-            plt.savefig('MCMC_MH_f-sig_chains_SM.png')
+            plt.savefig('MCMC_DRAM_f-sig_chains_SM.png')
         else:
-            plt.savefig('MCMC_MH_f-sig_chains.png')
+            plt.savefig('MCMC_DRAM_f-sig_chains.png')
         plt.show()
 
 
@@ -304,7 +304,7 @@ if (run_case2):
     if (plot_margPDFs_using_corner):
         fig = corner.corner(chain[1024:], bins=32, labels=['$f$/source', '$\sigma_{\epsilon}$/noise'], truths=[source_true, sig_true])
         if (surr_model):
-            plt.savefig('MCMC_MH_f-sig_margPDFs_SM.png')
+            plt.savefig('MCMC_DRAM_f-sig_margPDFs_SM.png')
         else:
-            plt.savefig('MCMC_MH_f-sig_margPDFs.png')
+            plt.savefig('MCMC_DRAM_f-sig_margPDFs.png')
         plt.show()
