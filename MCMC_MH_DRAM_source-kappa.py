@@ -190,7 +190,7 @@ if (run_case1):
     n_up = 256
     gamma_DR = 1./5.
 
-    surr_model = False
+    surr_model = True
     a_like = np.zeros([6,1])
     if (surr_model):
         a_like = ln_likelihood_construct_surrogate(data_experiment)

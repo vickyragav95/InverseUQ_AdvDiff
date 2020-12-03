@@ -291,7 +291,7 @@ if (run_case2):
         axes[0].set_ylabel('$f$/source')
 
         axes[1].axhline(sig_true, color='r', label='sigma_true')
-        axes[0].legend(loc='best')
+        axes[1].legend(loc='best')
         axes[1].set_ylabel('$\sigma_{\epsilon}$/noise')
         if (surr_model):
             plt.savefig('MCMC_DRAM_f-sig_chains_SM.png')
