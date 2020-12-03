@@ -84,11 +84,17 @@ a_0_k = 0.25
 b_0_k = 1.0
 Exp_k = a_0_k/b_0_k
 
+Niter=50
+mean_f = np.zeros([Niter+1,1])
+mean_k = np.zeros([Niter+1,1])
+mean_f[0] = mu_f
+mean_k[0] = a_0_k/b_0_k
+
 A = ln_likelihood_poly_fit(data_experiment)
 mu_like = -(A[1]+A[5]*Exp_k)/(2*A[2])
 tau_like = -2*A[2]
 # print(tau_like)
-for k in range(50):
+for k in range(Niter):
 
 
     mu_N = (mu_like*tau_like + tau_f*mu_f)/(tau_like + tau_f)
@@ -96,7 +102,7 @@ for k in range(50):
 
     tau_f = tau_N
     mu_f = mu_N
-
+    mean_f[k+1] = mu_N
     Exp_f = mu_N
     Exp_f_sq = mu_N**2 + 1.0/tau_N
 
@@ -106,14 +112,32 @@ for k in range(50):
 
     a_0_k = a_N_k
     b_0_k = b_N_k
+    mean_k[k+1] = a_N_k/b_N_k
     Exp_k = a_N_k/b_N_k
 
     print('ITERATION=',k)
-    print(mu_N)
-    print(Exp_k)
+    print('f=',[mu_N, tau_N])
+    print('k=',[Exp_k, Exp_k/b_N_k])
     print('\n')
 
-Npts = 100
+plot_each_chain = True
+if(plot_each_chain):
+    fig,axes = plt.subplots(2, 1, sharex=True)
+
+    axes[0].plot(mean_f, color='k', drawstyle='steps')
+    axes[1].plot(mean_k, color='k', drawstyle='steps')
+
+    axes[0].axhline(source_true, color='r', label='source_true')
+    axes[0].legend(loc='best')
+    axes[0].set_ylabel('$\mathbb{E}[f]$')
+
+    axes[1].axhline(kappa_true, color='r', label='kappa_true')
+    axes[1].legend(loc='best')
+    axes[1].set_ylabel('$\mathbb{E}[\kappa]$')
+    plt.savefig('VB_f-k_chains.png')
+    plt.show()
+
+Npts = 250
 x1 = np.linspace(6.0, 12.0, Npts)
 x2 = np.linspace(0.01, 1.0, Npts)
 X1, X2 = np.meshgrid(x1,x2)
@@ -132,16 +156,19 @@ plt.figure()
 plt.contour(X1, X2, Z)
 plt.axvline(source_true, color='r', linestyle='--', label='true')
 plt.axhline(kappa_true, color='b', linestyle='--', label='true')
+plt.savefig('VB_f-k_joint_dist.png')
 plt.show()
 
 plt.figure()
 p_source = norm.pdf(x1, mu_N, 1.0/tau_N)
 plt.plot(x1, p_source)
 plt.axvline(source_true, color='r', linestyle='--', label='true')
+plt.savefig('VB_f-k_f_dist.png')
 plt.show()
 
 plt.figure()
 p_kappa = gamma.pdf(x2, a_N_k, 0.0, 1.0/b_N_k)
 plt.plot(x2, p_kappa)
 plt.axvline(kappa_true, color='r', linestyle='--', label='true')
+plt.savefig('VB_f-k_k_dist.png')
 plt.show()
