@@ -143,6 +143,16 @@ if(plot_each_chain):
     plt.savefig('VB_k-sig_chains.png')
     plt.show()
 
+plot_chain_in_paramSpace = True
+if (plot_chain_in_paramSpace):
+    plt.plot(kappa_true, 1/sig_true**2, marker='o', color='r', zorder=10)
+    plt.plot(mean_k, mean_tau, marker='', color='k', linewidth=1.)
+
+    plt.ylabel('$\mathbb{E}[Tau_y]$')
+    plt.xlabel('$\mathbb{E}[\kappa]$')
+    plt.savefig('VB_f-sig_paramspace.png')
+    plt.show()
+
 Npts = 100
 x1 = np.linspace(0.01, 0.5, Npts)
 x2 = np.linspace(0.01, 0.5, Npts)

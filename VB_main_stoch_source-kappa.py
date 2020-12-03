@@ -137,6 +137,16 @@ if(plot_each_chain):
     plt.savefig('VB_f-k_chains.png')
     plt.show()
 
+plot_chain_in_paramSpace = True
+if (plot_chain_in_paramSpace):
+    plt.plot(source_true, kappa_true, marker='o', color='r', zorder=10)
+    plt.plot(mean_f, mean_k, marker='', color='k', linewidth=1.)
+
+    plt.ylabel('$\mathbb{E}[\kappa]$')
+    plt.xlabel('$\mathbb{E}[f]$')
+    plt.savefig('VB_f-k_paramspace.png')
+    plt.show()
+
 Npts = 250
 x1 = np.linspace(6.0, 12.0, Npts)
 x2 = np.linspace(0.01, 1.0, Npts)
