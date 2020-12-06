@@ -33,7 +33,7 @@ def computational_model(beta, source, bc_left, bc_right, params):
     return (AdvDiff_solve(beta, params[0], source, bc_left, bc_right))
 
 def ln_likelihood_poly_fit(data_experiment, params):
-    Nsamples = 10
+    Nsamples = 15
     samples = np.random.uniform(0.0, 1.0, Nsamples)
     y = np.zeros((Nsamples,1), dtype=float)
     A = np.zeros((Nsamples,3), dtype=float)
@@ -81,13 +81,13 @@ a_0_kappa = 2.0
 b_0_kappa = 2.0
 a_0_tau = 2.0
 b_0_tau = 3.0
-Niter=50
+Niter=100
 mean_k = np.zeros([Niter+1,1])
 mean_tau = np.zeros([Niter+1,1])
 mean_k[0] = a_0_kappa/b_0_kappa
 mean_tau[0] = a_0_tau/b_0_tau
 for k in range(Niter):
-    nrml_lkhood_params = np.array([1.0, np.sqrt(1.0/Exp_tau_y)])
+    nrml_lkhood_params = np.array([1.0, (1.0/Exp_tau_y)])
     [A_like, B_like, C_like] = ln_likelihood_poly_fit(data_experiment, nrml_lkhood_params)
     # [mu_like, tau_like] = ln_likelihood_MC(data_experiment, nrml_lkhood_params, mu_f, 1.0/tau_f)
     A_like = A_like.item()
@@ -143,7 +143,7 @@ if(plot_each_chain):
     plt.savefig('VB_k-sig_chains.png')
     plt.show()
 
-plot_chain_in_paramSpace = True
+plot_chain_in_paramSpace = False
 if (plot_chain_in_paramSpace):
     plt.plot(kappa_true, 1/sig_true**2, marker='o', color='r', zorder=10)
     plt.plot(mean_k, mean_tau, marker='', color='k', linewidth=1.)
@@ -153,7 +153,7 @@ if (plot_chain_in_paramSpace):
     plt.savefig('VB_f-sig_paramspace.png')
     plt.show()
 
-Npts = 100
+Npts = 250
 x1 = np.linspace(0.01, 0.5, Npts)
 x2 = np.linspace(0.01, 0.5, Npts)
 X1, X2 = np.meshgrid(x1,x2)
@@ -171,8 +171,12 @@ for i in range(Npts):
 # print(Z)
 plt.figure()
 plt.contour(X1, X2, Z)
-plt.axvline(kappa_true, color='r', linestyle='--', label='true')
-plt.axhline(1/sig_true**2, color='b', linestyle='--', label='true')
+plt.axvline(kappa_true, color='r', linestyle='--', label='$\kappa_{true}$')
+plt.axhline(1/sig_true**2, color='b', linestyle='--', label='$\\tau_{y,true}$')
+plt.legend(loc='best')
+plt.title('$P(\\theta)$')
+plt.ylabel('$\\tau_y$')
+plt.xlabel('$\kappa$')
 plt.savefig('VB_k-sig_joint_dist.png')
 plt.show()
 
@@ -180,6 +184,10 @@ plt.figure()
 p_kappa = gamma.pdf(x1, a_N_kappa, 0.0, 1.0/b_N_kappa)
 plt.plot(x1, p_kappa)
 plt.axvline(kappa_true, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(\kappa)$')
+plt.ylabel('$P(\kappa)$')
+plt.xlabel('$\kappa$')
 plt.savefig('VB_k-sig_k_dist.png')
 plt.show()
 
@@ -187,5 +195,9 @@ plt.figure()
 p_tau = gamma.pdf(x2, a_N_tau, 0.0, 1.0/b_N_tau)
 plt.plot(x2, p_tau)
 plt.axvline(1/sig_true**2, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(\\tau_y)$')
+plt.ylabel('$P(\\tau_y)$')
+plt.xlabel('$\\tau_y$')
 plt.savefig('VB_k-sig_sig_dist.png')
 plt.show()

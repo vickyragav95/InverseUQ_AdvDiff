@@ -11,7 +11,7 @@ n_data = 50
 # true source
 source_true = 10.0
 # true noise added to data
-sig_true = 1.0
+sig_true = 2.0
 
 # deterministic parameters
 kappa_deterministic    = 0.1
@@ -181,7 +181,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model):
 
 
 # case 1: sig_true is known
-run_case1 = True
+run_case1 = False
 if (run_case1):
 
     params0 = [15.0]
@@ -249,6 +249,7 @@ if (run_case2):
     tau_like = 0.0
     off_like = 0.0
     surr_model = True
+    # surr_model = False
 
     if (surr_model):
         mu_like, tau_like, off_like = ln_likelihood_construct_surrogate(data_experiment)

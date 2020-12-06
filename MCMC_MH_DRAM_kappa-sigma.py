@@ -9,9 +9,9 @@ np.random.seed(12345)
 n_data = 50
 
 # true kappa
-kappa_true = 0.1
+kappa_true = 0.3
 # true noise added to data
-sig_true = 3.0
+sig_true = 2.0
 
 # deterministic parameters
 source_deterministic    = 10.0
@@ -180,7 +180,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model):
 
 
 # case 1: sig_true is known
-run_case1 = True
+run_case1 = False
 if (run_case1):
 
     # params0 = [15.0]

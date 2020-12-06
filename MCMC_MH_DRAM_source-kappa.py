@@ -9,7 +9,7 @@ np.random.seed(12345)
 n_data = 50
 
 # true diffusivity
-kappa_true = 0.1
+kappa_true = 0.2
 # true source
 source_true = 10.0
 # true noise added to data
@@ -70,8 +70,8 @@ def ln_likelihood_simple(data_expmt, params):
     return -0.5*np.sum(diff**2)
 
 def ln_likelihood_construct_surrogate(data_experiment):
-    Nsamples_f = 5
-    Nsamples_k = 10
+    Nsamples_f = 10
+    Nsamples_k = 20
     samples_f = np.random.uniform(8.0, 12.0, Nsamples_f)
     samples_k = np.random.uniform(0.01,0.5, Nsamples_k)
     N_tot = Nsamples_f*Nsamples_k

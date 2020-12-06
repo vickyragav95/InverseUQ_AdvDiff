@@ -78,8 +78,8 @@ data_experiment = data_true + noise_true
 Exp_tau_y = 5.0
 tau_f = 2.0
 mu_f = 14.0
-a_0_tau = 2.0
-b_0_tau = 0.25
+a_0_tau = 1.0
+b_0_tau = 0.5
 Niter=100
 mean_f = np.zeros([Niter+1,1])
 mean_tau = np.zeros([Niter+1,1])
@@ -139,7 +139,7 @@ if(plot_each_chain):
     plt.savefig('VB_f-sig_chains.png')
     plt.show()
 
-plot_chain_in_paramSpace = True
+plot_chain_in_paramSpace = False
 if (plot_chain_in_paramSpace):
     plt.plot(source_true, 1/sig_true**2, marker='o', color='r', zorder=10)
     plt.plot(mean_f, mean_tau, marker='', color='k', linewidth=1.)
@@ -165,8 +165,12 @@ for i in range(Npts):
 # print(Z)
 plt.figure()
 plt.contour(X1, X2, Z)
-plt.axvline(source_true, color='r', linestyle='--', label='true')
-plt.axhline(1/sig_true**2, color='b', linestyle='--', label='true')
+plt.axvline(source_true, color='r', linestyle='--', label='$f_{true}$')
+plt.axhline(1/sig_true**2, color='b', linestyle='--', label='$\\tau_{y,true}$')
+plt.legend(loc='best')
+plt.title('$P(\\theta)$')
+plt.ylabel('$\\tau_y$')
+plt.xlabel('$f$')
 plt.savefig('VB_f-sig_joint_dist.png')
 plt.show()
 
@@ -174,6 +178,10 @@ plt.figure()
 p_source = norm.pdf(x1, mu_N, 1.0/tau_N)
 plt.plot(x1, p_source)
 plt.axvline(source_true, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(f)$')
+plt.ylabel('$P(f)$')
+plt.xlabel('$f$')
 plt.savefig('VB_f-sig_f_dist.png')
 plt.show()
 
@@ -181,5 +189,9 @@ plt.figure()
 p_tau = gamma.pdf(x2, a_N_tau, 0.0, 1.0/b_N_tau)
 plt.plot(x2, p_tau)
 plt.axvline(1/sig_true**2, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(\\tau_y)$')
+plt.ylabel('$P(\\tau_y)$')
+plt.xlabel('$\\tau_y$')
 plt.savefig('VB_f-sig_sig_dist.png')
 plt.show()

@@ -62,7 +62,7 @@ n_data = 50
 source_true = 10.0
 kappa_true = 0.2
 # true noise added to data
-sig_true = 4.0
+sig_true = 3.0
 
 # deterministic parameters
 beta_deterministic     = 2.0
@@ -137,7 +137,7 @@ if(plot_each_chain):
     plt.savefig('VB_f-k_chains.png')
     plt.show()
 
-plot_chain_in_paramSpace = True
+plot_chain_in_paramSpace = False
 if (plot_chain_in_paramSpace):
     plt.plot(source_true, kappa_true, marker='o', color='r', zorder=10)
     plt.plot(mean_f, mean_k, marker='', color='k', linewidth=1.)
@@ -164,8 +164,12 @@ for i in range(Npts):
 # print(Z)
 plt.figure()
 plt.contour(X1, X2, Z)
-plt.axvline(source_true, color='r', linestyle='--', label='true')
-plt.axhline(kappa_true, color='b', linestyle='--', label='true')
+plt.axvline(source_true, color='r', linestyle='--', label='$f_{true}$')
+plt.axhline(kappa_true, color='b', linestyle='--', label='$\kappa_{true}$')
+plt.legend(loc='best')
+plt.title('$P(\\theta)$')
+plt.ylabel('$\kappa$')
+plt.xlabel('$f$')
 plt.savefig('VB_f-k_joint_dist.png')
 plt.show()
 
@@ -173,6 +177,10 @@ plt.figure()
 p_source = norm.pdf(x1, mu_N, 1.0/tau_N)
 plt.plot(x1, p_source)
 plt.axvline(source_true, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(f)$')
+plt.ylabel('$P(f)$')
+plt.xlabel('$f$')
 plt.savefig('VB_f-k_f_dist.png')
 plt.show()
 
@@ -180,5 +188,9 @@ plt.figure()
 p_kappa = gamma.pdf(x2, a_N_k, 0.0, 1.0/b_N_k)
 plt.plot(x2, p_kappa)
 plt.axvline(kappa_true, color='r', linestyle='--', label='true')
+plt.legend(loc='best')
+plt.title('$P(\kappa)$')
+plt.ylabel('$P(\kappa)$')
+plt.xlabel('$\kappa$')
 plt.savefig('VB_f-k_k_dist.png')
 plt.show()
