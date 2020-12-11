@@ -121,7 +121,7 @@ def run_dram(params0, n_steps, init_cov, n_AM, n_up, gamma_DR, surr_model):
         raise ValueError("Proposal covariance should have same shape as parameter vector.")
 
     s_AM = 2.38**2/len(params0)
-    n_burn = 800
+    n_burn = 1200
 
     cov = copy.deepcopy(init_cov)
     L = np.linalg.cholesky(cov)

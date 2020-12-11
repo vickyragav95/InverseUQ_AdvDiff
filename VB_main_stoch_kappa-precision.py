@@ -137,7 +137,7 @@ if(plot_each_chain):
     axes[0].legend(loc='best')
     axes[0].set_ylabel('$\mathbb{E}[\kappa]$')
 
-    axes[1].axhline(1/sig_true**2, color='r', label='sigma_true')
+    axes[1].axhline(1/sig_true**2, color='r', label='tau_true')
     axes[1].legend(loc='best')
     axes[1].set_ylabel('$\mathbb{E}[Tau_y]$')
     plt.savefig('VB_k-sig_chains.png')
@@ -200,4 +200,29 @@ plt.title('$P(\\tau_y)$')
 plt.ylabel('$P(\\tau_y)$')
 plt.xlabel('$\\tau_y$')
 plt.savefig('VB_k-sig_sig_dist.png')
+plt.show()
+
+fig, axs = plt.subplots(2,2)
+axs[0,0].plot(x1,p_kappa)
+axs[0,0].axvline(kappa_true, color='r', linestyle='--', label='true')
+axs[0,0].legend(loc='best')
+axs[0,0].set_title('$P(\kappa)$')
+axs[0,0].set_ylabel('$P(\kappa)$')
+
+axs[1,0].contour(X1, X2, Z)
+axs[1,0].axvline(kappa_true, color='r', linestyle='--', label='$\kappa_{true}$')
+axs[1,0].axhline(1/sig_true**2, color='b', linestyle='--', label='$\\tau_{y,true}$')
+axs[1,0].legend(loc='best')
+axs[1,0].set_ylabel('$\\tau_y$')
+axs[1,0].set_xlabel('$\kappa$')
+
+axs[1,1].plot(x2, p_tau)
+axs[1,1].axvline(1/sig_true**2, color='r', linestyle='--', label='true')
+axs[1,1].legend(loc='best')
+axs[1,1].set_title('$P(\\tau_y)$')
+axs[1,1].set_xlabel('$\\tau_y$')
+
+axs[0,1].axis('off')
+
+plt.savefig('k-sig_MargPDFs.pdf')
 plt.show()

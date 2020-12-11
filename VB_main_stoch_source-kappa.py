@@ -80,7 +80,7 @@ data_experiment = data_true + noise_true
 # VB parameters
 tau_f = 1.0
 mu_f = 14.0
-a_0_k = 0.25
+a_0_k = 3.0
 b_0_k = 1.0
 Exp_k = a_0_k/b_0_k
 
@@ -91,11 +91,12 @@ mean_f[0] = mu_f
 mean_k[0] = a_0_k/b_0_k
 
 A = ln_likelihood_poly_fit(data_experiment)
-mu_like = -(A[1]+A[5]*Exp_k)/(2*A[2])
-tau_like = -2*A[2]
+# mu_like = -(A[1]+A[5]*Exp_k)/(2*A[2])
+# tau_like = -2*A[2]
 # print(tau_like)
 for k in range(Niter):
-
+    mu_like = -(A[1]+A[5]*Exp_k)/(2*A[2])
+    tau_like = -2*A[2]
 
     mu_N = (mu_like*tau_like + tau_f*mu_f)/(tau_like + tau_f)
     tau_N = (tau_f + tau_like)/2.0
@@ -170,7 +171,7 @@ plt.legend(loc='best')
 plt.title('$P(\\theta)$')
 plt.ylabel('$\kappa$')
 plt.xlabel('$f$')
-plt.savefig('VB_f-k_joint_dist.png')
+plt.savefig('VB_f-k_joint_dist.png', dpi=600)
 plt.show()
 
 plt.figure()
@@ -181,7 +182,7 @@ plt.legend(loc='best')
 plt.title('$P(f)$')
 plt.ylabel('$P(f)$')
 plt.xlabel('$f$')
-plt.savefig('VB_f-k_f_dist.png')
+plt.savefig('VB_f-k_f_dist.png', dpi=600)
 plt.show()
 
 plt.figure()
@@ -192,5 +193,29 @@ plt.legend(loc='best')
 plt.title('$P(\kappa)$')
 plt.ylabel('$P(\kappa)$')
 plt.xlabel('$\kappa$')
-plt.savefig('VB_f-k_k_dist.png')
+plt.savefig('VB_f-k_k_dist.png', dpi=600)
 plt.show()
+
+fig, axs = plt.subplots(2,2)
+axs[0,0].plot(x1,p_source)
+axs[0,0].axvline(source_true, color='r', linestyle='--', label='true')
+axs[0,0].legend(loc='best')
+axs[0,0].set_title('$P(f)$')
+axs[0,0].set_ylabel('$P(f)$')
+
+axs[1,0].contour(X1, X2, Z)
+axs[1,0].axvline(source_true, color='r', linestyle='--', label='$f_{true}$')
+axs[1,0].axhline(kappa_true, color='b', linestyle='--', label='$\kappa_{true}$')
+axs[1,0].legend(loc='best')
+axs[1,0].set_ylabel('$\kappa$')
+axs[1,0].set_xlabel('$f$')
+
+axs[1,1].plot(x2, p_kappa)
+axs[1,1].axvline(kappa_true, color='r', linestyle='--', label='true')
+axs[1,1].legend(loc='best')
+axs[1,1].set_title('$P(\kappa)$')
+axs[1,1].set_xlabel('$\kappa$')
+
+axs[0,1].axis('off')
+
+plt.savefig('f-k_MargPDFs.pdf')

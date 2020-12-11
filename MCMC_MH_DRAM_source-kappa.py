@@ -185,12 +185,12 @@ if (run_case1):
 
     params0 = [15.0, 1.0]
     init_cov = np.diag([(0.25)**2, (0.02)**2])
-    n_steps = 2048
+    n_steps = 4096
     n_AM = 512
     n_up = 256
     gamma_DR = 1./5.
 
-    surr_model = True
+    surr_model = False
     a_like = np.zeros([6,1])
     if (surr_model):
         a_like = ln_likelihood_construct_surrogate(data_experiment)
