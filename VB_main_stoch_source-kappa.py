@@ -30,7 +30,7 @@ def ln_likelihood_simple(data_expmt, params):
 def computational_model(beta, bc_left, bc_right, params):
     return (AdvDiff_solve(beta, params[1], params[0], bc_left, bc_right))
 
-def ln_likelihood_poly_fit(data_experiment):
+def ln_likelihood_func_fit(data_experiment):
     Nsamples_f = 10
     Nsamples_k = 15
     samples_f = np.random.uniform(8.0, 12.0, Nsamples_f)
@@ -90,7 +90,7 @@ mean_k = np.zeros([Niter+1,1])
 mean_f[0] = mu_f
 mean_k[0] = a_0_k/b_0_k
 
-A = ln_likelihood_poly_fit(data_experiment)
+A = ln_likelihood_func_fit(data_experiment)
 # mu_like = -(A[1]+A[5]*Exp_k)/(2*A[2])
 # tau_like = -2*A[2]
 # print(tau_like)

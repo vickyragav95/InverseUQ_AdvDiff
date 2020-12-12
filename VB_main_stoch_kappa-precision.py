@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import corner
 import copy
 from AdvDiff_solver import AdvDiff_solve
-
+# actual log likelihood terms
 def ln_likelihood(data_expmt, params):
     n = len(data_expmt)
 
@@ -18,6 +18,7 @@ def ln_likelihood(data_expmt, params):
 
     return -0.5*n*np.log(2*np.pi*param_sig_Sq) - 0.5*np.sum(diff**2/param_sig_Sq)
 
+# log-likelihood of only exponential terms in likelihood
 def ln_likelihood_simple(data_expmt, params):
     n = len(data_expmt)
 
@@ -32,7 +33,8 @@ def ln_likelihood_simple(data_expmt, params):
 def computational_model(beta, source, bc_left, bc_right, params):
     return (AdvDiff_solve(beta, params[0], source, bc_left, bc_right))
 
-def ln_likelihood_poly_fit(data_experiment, params):
+# fits gamma distribution on simple log likelihood term
+def ln_likelihood_func_fit(data_experiment, params):
     Nsamples = 15
     samples = np.random.uniform(0.0, 1.0, Nsamples)
     y = np.zeros((Nsamples,1), dtype=float)
@@ -75,7 +77,7 @@ noise_true = np.random.normal(0,sig_true,n_data)
 data_experiment = data_true + noise_true
 
 
-# VB parameters
+# VB initial parameters
 Exp_tau_y = 0.25
 a_0_kappa = 2.0
 b_0_kappa = 2.0
@@ -88,17 +90,17 @@ mean_k[0] = a_0_kappa/b_0_kappa
 mean_tau[0] = a_0_tau/b_0_tau
 for k in range(Niter):
     nrml_lkhood_params = np.array([1.0, (1.0/Exp_tau_y)])
-    [A_like, B_like, C_like] = ln_likelihood_poly_fit(data_experiment, nrml_lkhood_params)
-    # [mu_like, tau_like] = ln_likelihood_MC(data_experiment, nrml_lkhood_params, mu_f, 1.0/tau_f)
+    # compute new gamma dist fit for updated Exp_tau_y
+    [A_like, B_like, C_like] = ln_likelihood_func_fit(data_experiment, nrml_lkhood_params)
     A_like = A_like.item()
     B_like = B_like.item()
     C_like = C_like.item()
 
-    # mu_N = (mu_like*tau_like + tau_f*mu_f)/(tau_like + tau_f)
-    # tau_N = (tau_f + tau_like)/2.0
+
+    # compute new a,b params for kappa
     a_N_kappa = a_0_kappa + B_like
     b_N_kappa = b_0_kappa - A_like
-
+    # update priors
     a_0_kappa = a_N_kappa
     b_0_kappa = b_N_kappa
     mean_k[k+1] = a_N_kappa/b_N_kappa
@@ -108,12 +110,10 @@ for k in range(Niter):
     A_like_tmp = A_like/Exp_tau_y
     B_like_tmp = B_like/Exp_tau_y
     C_like_tmp = C_like/Exp_tau_y
-
+    # compute new a,b params for tau_y
     a_N_tau = a_0_tau + n_data/2 + 1
     b_N_tau = b_0_tau + A_like_tmp*a_N_kappa/b_N_kappa + C_like_tmp + B_like_tmp*(np.log(b_N_kappa) + sc.digamma(a_N_kappa))
-    # b_N = b_0_tau + 0.5*tau_like_tmp*Exp_f_sq - tau_like_tmp*mu_like*Exp_f + 0.5*tau_like_tmp*mu_like**2
-    # b_N_tau = a_N_tau*sig_true**2
-
+    # update priors
     a_0_tau = a_N_tau
     b_0_tau = b_N_tau
     Exp_tau_y = a_N_tau/b_N_tau

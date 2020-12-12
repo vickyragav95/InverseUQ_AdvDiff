@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import corner
 import copy
 from AdvDiff_solver import AdvDiff_solve
-
+# actual log likelihood terms
 def ln_likelihood(data_expmt, params):
     n = len(data_expmt)
 
@@ -18,6 +18,7 @@ def ln_likelihood(data_expmt, params):
 
     return -0.5*n*np.log(2*np.pi*param_sig_Sq) - 0.5*np.sum(diff**2/param_sig_Sq)
 
+# log-likelihood of only exponential terms in likelihood
 def ln_likelihood_simple(data_expmt, params):
     n = len(data_expmt)
 
@@ -32,8 +33,10 @@ def ln_likelihood_simple(data_expmt, params):
 def computational_model(beta, kappa, bc_left, bc_right, params):
     return (AdvDiff_solve(beta, kappa, params[0], bc_left, bc_right))
 
+# fits 2nd order polynomial on simple log likelihood term
 def ln_likelihood_poly_fit(data_experiment, params):
     Nsamples = 5
+    # randomly sample values for f to fit a polynomial
     samples = np.random.uniform(0.0, 20.0, Nsamples)
     y = np.zeros((Nsamples,1), dtype=float)
     A = np.zeros((Nsamples,3), dtype=float)
@@ -48,7 +51,7 @@ def ln_likelihood_poly_fit(data_experiment, params):
     y = np.matmul(np.transpose(A), y)
     A = np.matmul(np.transpose(A), A)
     a = np.linalg.solve(A,y)
-
+    # directly return mean, precision and offset terms of fitted parabola
     return -a[1]/(2.0*a[2]), 2.0*np.abs(a[2]), a[0]-a[1]*a[1]/(4.0*a[2])
 
 np.random.seed(12345)
@@ -74,7 +77,7 @@ noise_true = np.random.normal(0,sig_true,n_data)
 data_experiment = data_true + noise_true
 
 
-# VB parameters
+# VB initial parameters
 Exp_tau_y = 5.0
 tau_f = 2.0
 mu_f = 14.0
@@ -87,29 +90,31 @@ mean_f[0] = mu_f
 mean_tau[0] = a_0_tau/b_0_tau
 for k in range(Niter):
     nrml_lkhood_params = np.array([1.0, 1.0/Exp_tau_y])
+    # compute approx normal dist for log-likleihood
     [mu_like, tau_like, off_like] = ln_likelihood_poly_fit(data_experiment, nrml_lkhood_params)
     # [mu_like, tau_like] = ln_likelihood_MC(data_experiment, nrml_lkhood_params, mu_f, 1.0/tau_f)
     mu_like = mu_like.item()
     tau_like = tau_like.item()
     off_like = off_like.item()
-
+    # update new mean and precision
     mu_N = (mu_like*tau_like + tau_f*mu_f)/(tau_like + tau_f)
     tau_N = (tau_f + tau_like)/2.0
-
+    # updtae prior
     tau_f = tau_N
     mu_f = mu_N
 
     mean_f[k+1] = mu_N
-
+    # compute parameters optimal posterior for next variable
     Exp_f = mu_N
     Exp_f_sq = mu_N**2 + 1.0/tau_N
 
     tau_like_tmp = tau_like/Exp_tau_y
     off_like_tmp = off_like/Exp_tau_y
+    # update new a,b paameters for posterior
     a_N_tau = a_0_tau + n_data/2 + 1
     b_N_tau = b_0_tau + 0.5*tau_like_tmp*Exp_f_sq - tau_like_tmp*mu_like*Exp_f + 0.5*tau_like_tmp*mu_like**2 - off_like_tmp
     # b_N = b_0_tau + 0.5*tau_like_tmp*Exp_f_sq - tau_like_tmp*mu_like*Exp_f + 0.5*tau_like_tmp*mu_like**2
-
+    # update prior
     a_0_tau = a_N_tau
     b_0_tau = b_N_tau
     Exp_tau_y = a_N_tau/b_N_tau
@@ -148,7 +153,7 @@ if (plot_chain_in_paramSpace):
     plt.xlabel('$\mathbb{E}[f]$')
     plt.savefig('VB_f-sig_paramspace.png')
     plt.show()
-
+# For joint distribution plots
 Npts = 250
 x1 = np.linspace(6.0, 14.0, Npts)
 x2 = np.linspace(0.01, 2.0, Npts)

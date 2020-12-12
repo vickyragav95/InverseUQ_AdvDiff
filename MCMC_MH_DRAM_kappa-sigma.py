@@ -199,7 +199,7 @@ if (run_case1):
     A_like = 0.0
     B_like = 0.0
     C_like = 0.0
-    surr_model = True
+    surr_model = False
 
     if (surr_model):
         A_like, B_like, C_like = ln_likelihood_construct_surrogate(data_experiment)

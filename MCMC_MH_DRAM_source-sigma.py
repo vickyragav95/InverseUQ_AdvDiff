@@ -248,8 +248,8 @@ if (run_case2):
     mu_like = 0.0
     tau_like = 0.0
     off_like = 0.0
-    surr_model = True
-    # surr_model = False
+    # surr_model = True
+    surr_model = False
 
     if (surr_model):
         mu_like, tau_like, off_like = ln_likelihood_construct_surrogate(data_experiment)
